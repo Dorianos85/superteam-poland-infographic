@@ -1,0 +1,5 @@
+__pycache__/
+*.sqlite
+alerts.log
+dashboard.html
+SYSTEM_OPTIMIZATION_PROPOSAL.json

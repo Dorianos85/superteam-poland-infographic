@@ -1,0 +1,12 @@
+[project]
+name = "zlap-trend-pivot-engine"
+version = "1.0.0"
+description = "ZŁAP TREND — multi-agent Pivot Engine for crypto futures"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+zlap-pivot = "pivot_engine.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pivot_engine*"]
