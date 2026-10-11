@@ -104,10 +104,15 @@ def cmd_backtest(args, cfg: Config) -> None:
     if args.provider == "binance":
         from .data import BinanceFuturesProvider
         from .data.replay import ReplayProvider
+        live = BinanceFuturesProvider()
         if not args.symbols:
-            raise SystemExit("--symbols required for a Binance replay")
+            # Most liquid USDT perpetuals by 24h quote volume.
+            tickers = live.tickers()
+            perps = [s for s in live.symbols() if s in tickers and s != "BTCUSDT"]
+            args.symbols = sorted(perps, key=lambda s: tickers[s].quote_volume_24h, reverse=True)[:args.top]
+            print(f"universe: {' '.join(args.symbols)}")
         syms = list(dict.fromkeys(args.symbols + ["BTCUSDT"]))
-        provider = ReplayProvider.from_binance(BinanceFuturesProvider(), syms, args.days)
+        provider = ReplayProvider.from_binance(live, syms, args.days)
     else:
         provider = _provider(args.provider, args)
     journal = Journal(args.journal, cfg)
@@ -188,6 +193,7 @@ def main(argv: list[str] | None = None) -> None:
     common(p, "synthetic-history")
     p.add_argument("--days", type=float, default=60)
     p.add_argument("--step-h", type=int, default=4)
+    p.add_argument("--top", type=int, default=30, help="Binance: N most liquid perps when --symbols is omitted")
     p = sub.add_parser("optimize")
     p.add_argument("--out", default="SYSTEM_OPTIMIZATION_PROPOSAL.json")
     p = sub.add_parser("journal")

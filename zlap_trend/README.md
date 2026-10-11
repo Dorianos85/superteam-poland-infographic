@@ -33,7 +33,7 @@ python -m pivot_engine detail PYTHUSDT --provider synthetic
 
 # Walk-forward backtest → dziennik → propozycje optymalizacji
 python -m pivot_engine backtest --provider synthetic-history --n-symbols 40 --history-days 180
-python -m pivot_engine backtest --provider binance --symbols PYTHUSDT JUPUSDT --days 45
+python -m pivot_engine backtest --provider binance --top 30 --days 90   # lub --symbols PYTHUSDT JUPUSDT
 python -m pivot_engine optimize          # → SYSTEM_OPTIMIZATION_PROPOSAL.json
 python -m pivot_engine journal
 
