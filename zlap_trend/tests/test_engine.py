@@ -172,3 +172,19 @@ class JournalTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CoinFilterTests(unittest.TestCase):
+    def test_walk_forward_uses_only_past_window(self):
+        from pivot_engine.coin_filter import select_coins, walk_forward
+        rows = []
+        for i in range(80):
+            sym = "AAA" if i % 2 else "BBB"
+            # AAA wins in the first half, loses in the second: an in-sample whitelist picks it and pays for it.
+            r = (2.0 if i < 40 else -1.0) if sym == "AAA" else 0.5
+            rows.append({"symbol": sym, "entry_time": i, "realized_r": r, "outcome": "X", "taken": 1})
+        self.assertEqual(select_coins(rows[:40], 1, 0.0), {"AAA", "BBB"})
+        self.assertEqual(select_coins(rows[:40], 1, 5.0), {"AAA"})  # shrunk mean above global mean
+        res = walk_forward(rows, folds=2, shrink_k=5.0)
+        self.assertLess(res["out_of_sample"]["whitelist"]["expectancy_r"],
+                        res["out_of_sample"]["all"]["expectancy_r"])

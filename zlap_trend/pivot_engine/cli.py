@@ -149,6 +149,14 @@ def cmd_optimize(args, cfg: Config) -> None:
     print(f"\nfull report: {args.out}  (proposals are NOT applied — edit your --config JSON to adopt one)")
 
 
+def cmd_coinfilter(args, cfg: Config) -> None:
+    from .coin_filter import format_report, walk_forward
+    rows = Journal(args.journal, cfg).rows()
+    res = walk_forward(rows, folds=args.folds, min_trades=args.min_trades, shrink_k=args.shrink,
+                       taken_only=args.taken_only)
+    print(format_report(res))
+
+
 def cmd_journal(args, cfg: Config) -> None:
     rows = Journal(args.journal, cfg).rows()
     cols = ["setup_id", "best_status", "taken", "entry_mode", "pivot_score", "entry", "sl", "tp1", "rr",
@@ -196,13 +204,18 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--top", type=int, default=30, help="Binance: N most liquid perps when --symbols is omitted")
     p = sub.add_parser("optimize")
     p.add_argument("--out", default="SYSTEM_OPTIMIZATION_PROPOSAL.json")
+    p = sub.add_parser("coinfilter", help="walk-forward test of trading only previously profitable coins")
+    p.add_argument("--folds", type=int, default=4)
+    p.add_argument("--min-trades", type=int, default=1)
+    p.add_argument("--shrink", type=float, default=0.0, help="Bayesian shrinkage k (0 = naive sum R > 0)")
+    p.add_argument("--taken-only", action="store_true", help="only LONG_READY trades (small sample)")
     p = sub.add_parser("journal")
     p.add_argument("--limit", type=int, default=50)
 
     args = ap.parse_args(argv)
     cfg = Config.load(args.config)
     {"scan": cmd_scan, "watch": cmd_watch, "detail": cmd_detail, "backtest": cmd_backtest,
-     "optimize": cmd_optimize, "journal": cmd_journal}[args.cmd](args, cfg)
+     "optimize": cmd_optimize, "journal": cmd_journal, "coinfilter": cmd_coinfilter}[args.cmd](args, cfg)
 
 
 if __name__ == "__main__":
