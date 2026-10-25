@@ -202,7 +202,7 @@ def simulate(row: dict, candles, cfg: Config) -> dict:
     hi, lo = entry, entry
     out = {"outcome": "OPEN", "exit_time": None, "realized_r": None, "false_breakout": 0,
            "position_status": Status.ACTIVE_POSITION}
-    bars = candles[1:]  # the entry candle itself is history
+    bars = candles  # entry_time is the scan moment: every candle here opened after the entry
     for n, c in enumerate(bars):
         hi, lo = max(hi, c.h), min(lo, c.l)
         if c.l <= stop:  # conservative: stop checked before targets on the same bar

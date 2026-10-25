@@ -115,7 +115,7 @@ class PivotDetectorAgent:
             "VOLUME": volume_ok,
             "DERIVATIVES": derivatives_ok,
             "RELATIVE_STRENGTH_4H": rs_4h_positive,
-            "HOLD_ABOVE_LINE": res.holding or (res.confirmed_4h and not res.false_breakout),
+            "HOLD_ABOVE_LINE": res.holding,  # last closes above the line; a 4H cross alone is not a hold
         }
         res.confirmation_count = sum(bool(v) for v in res.confirmations.values())
         res.pivot_confirmed = (res.confirmation_count >= self.cfg.pivot.min_confirmations
