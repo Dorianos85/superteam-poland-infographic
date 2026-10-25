@@ -6,6 +6,9 @@ Feeds the Self-Improvement agent. Outcome model (per setup, in R):
 * then TP2                           -> WIN_TP2
 * then back to BE                    -> WIN_TP1
 * max hold reached                   -> TIMEOUT (open part marked to market)
+realized_r is NET of costs (taker fees, liquidity-scaled slippage, extra stop
+slippage, gaps through the stop, funding while holding); gross_r and cost_r are
+stored next to it.
 Untaken setups (PIVOT_DETECTED but filtered) are evaluated the same way from the
 moment they were first recorded, so the optimizer can measure what each filter
 is worth.
@@ -42,7 +45,8 @@ CREATE TABLE IF NOT EXISTS setups (
     line_json TEXT, components_json TEXT, failed_json TEXT,
     position_status TEXT,
     outcome TEXT, exit_time INTEGER, realized_r REAL,
-    mfe REAL, mae REAL, max_r REAL, false_breakout INTEGER
+    mfe REAL, mae REAL, max_r REAL, false_breakout INTEGER,
+    gross_r REAL, cost_r REAL, quote_volume_24h REAL
 );
 CREATE TABLE IF NOT EXISTS alerts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,6 +69,10 @@ class Journal:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        cols = {r[1] for r in self.db.execute("PRAGMA table_info(setups)")}
+        for col in ("gross_r REAL", "cost_r REAL", "quote_volume_24h REAL"):  # migrate older journals
+            if col.split()[0] not in cols:
+                self.db.execute(f"ALTER TABLE setups ADD COLUMN {col}")
 
     # ---------------------------------------------------------------- record
     def record(self, a) -> None:
@@ -93,6 +101,7 @@ class Journal:
             "funding": a.derivatives.funding, "funding_state": a.derivatives.funding_state,
             "correction_depth": a.correction.correction_depth,
             "atr_1h": last_atr(a.candles["1h"]),
+            "quote_volume_24h": a.scan.quote_volume_24h,
             "retest_status": a.retest.status, "pivot_confirmations": a.pivot.confirmation_count,
             "critic_majors": sum(1 for o in a.critic.objections if o["severity"] in ("MAJOR", "CRITICAL")),
             "line_json": json.dumps(line.to_dict()) if line else None,
@@ -110,7 +119,8 @@ class Journal:
         else:
             if taken_now:  # freeze the real entry; reset the hypothetical outcome
                 data.update(levels, taken=1, position_status=Status.ACTIVE_POSITION, outcome=None,
-                            exit_time=None, realized_r=None, mfe=None, mae=None, max_r=None, false_breakout=None)
+                            exit_time=None, realized_r=None, gross_r=None, cost_r=None, mfe=None, mae=None, max_r=None,
+                            false_breakout=None)
             else:
                 for k in ("pivot_score", "components_json"):
                     data.pop(k)  # hypothetical setups keep their first snapshot
@@ -156,10 +166,11 @@ class Journal:
             candles = [c for c in provider.klines(row["symbol"], "1h", 1000) if c.t >= row["entry_time"]]
             res = simulate(dict(row), candles, self.cfg)
             self.db.execute(
-                "UPDATE setups SET outcome=?, exit_time=?, realized_r=?, mfe=?, mae=?, max_r=?, "
-                "false_breakout=?, position_status=? WHERE setup_id=?",
-                (res["outcome"], res["exit_time"], res["realized_r"], res["mfe"], res["mae"], res["max_r"],
-                 res["false_breakout"], res["position_status"] if row["taken"] else None, row["setup_id"]))
+                "UPDATE setups SET outcome=?, exit_time=?, realized_r=?, gross_r=?, cost_r=?, mfe=?, mae=?, "
+                "max_r=?, false_breakout=?, position_status=? WHERE setup_id=?",
+                (res["outcome"], res["exit_time"], res["realized_r"], res["gross_r"], res["cost_r"], res["mfe"],
+                 res["mae"], res["max_r"], res["false_breakout"],
+                 res["position_status"] if row["taken"] else None, row["setup_id"]))
             closed += res["outcome"] != "OPEN"
         self.db.commit()
         return closed
@@ -190,46 +201,76 @@ def failed_filters(a, cfg: Config) -> list[str]:
     return failed
 
 
+def slippage_pct(row: dict, cfg: Config) -> float:
+    """Per-fill slippage, larger for thinner coins: base * sqrt(ref_volume / volume), capped."""
+    c = cfg.costs
+    vol = row.get("quote_volume_24h")
+    if not vol:
+        return c.slippage_pct * 2  # unknown liquidity: assume a thin book
+    mult = min(c.max_slippage_mult, max(1.0, (c.slippage_ref_volume / vol) ** 0.5))
+    return c.slippage_pct * mult
+
+
 def simulate(row: dict, candles, cfg: Config) -> dict:
+    """Replay one setup bar by bar. Returns net and gross R plus excursions."""
     entry, sl, tp1, tp2 = row["entry"], row["sl"], row["tp1"], row["tp2"]
     risk = entry - sl
     partial = cfg.risk.tp1_partial
-    rr1 = (tp1 - entry) / risk
-    rr2 = (tp2 - entry) / risk if tp2 else None
     line = Line(**{k: v for k, v in json.loads(row["line_json"]).items() if k in ("t1", "p1", "t2", "p2")}) \
         if row.get("line_json") else None
-    stop, hit1 = sl, False
+    stop, hit1, remaining = sl, False, 1.0
     hi, lo = entry, entry
-    out = {"outcome": "OPEN", "exit_time": None, "realized_r": None, "false_breakout": 0,
-           "position_status": Status.ACTIVE_POSITION}
+    fills: list[tuple[float, float, bool]] = []  # (fraction, price, is_stop)
+    t_tp1 = None
+    out = {"outcome": "OPEN", "exit_time": None, "realized_r": None, "gross_r": None, "cost_r": None,
+           "false_breakout": 0, "position_status": Status.ACTIVE_POSITION}
     bars = candles  # entry_time is the scan moment: every candle here opened after the entry
+
+    def close_all(price, is_stop, outcome, t):
+        fills.append((remaining, price, is_stop))
+        out["outcome"], out["exit_time"] = outcome, t
+
     for n, c in enumerate(bars):
         hi, lo = max(hi, c.h), min(lo, c.l)
-        if c.l <= stop:  # conservative: stop checked before targets on the same bar
-            out["exit_time"] = c.close_time
-            if hit1:
-                out["outcome"], out["realized_r"] = "WIN_TP1", partial * rr1
-            else:
-                out["outcome"], out["realized_r"] = "LOSS", -1.0
-                if line is not None:
-                    out["false_breakout"] = int(any(x.c < line.value(x.close_time) for x in bars[:n + 1][:12]))
+        if c.l <= stop:  # conservative: the stop is checked before targets on the same bar
+            fill = min(stop, c.o)  # a gap through the stop fills at the open, not at the stop
+            close_all(fill, True, "WIN_TP1" if hit1 else "LOSS", c.close_time)
+            if not hit1 and line is not None:
+                out["false_breakout"] = int(any(x.c < line.value(x.close_time) for x in bars[:n + 1][:12]))
             break
         if not hit1 and c.h >= tp1:
-            hit1, stop = True, entry
+            fills.append((partial, tp1, False))
+            remaining -= partial
+            hit1, stop, t_tp1 = True, entry, c.close_time
             out["position_status"] = Status.MANAGEMENT
-        if hit1 and rr2 is not None and c.h >= tp2:
-            out["outcome"], out["realized_r"], out["exit_time"] = "WIN_TP2", partial * rr1 + (1 - partial) * rr2, c.close_time
+            if cfg.costs.same_bar == "pessimistic" and c.l <= entry and not (tp2 and c.h >= tp2):
+                close_all(entry, True, "WIN_TP1", c.close_time)  # order inside the bar is unknown
+                break
+        if hit1 and tp2 and c.h >= tp2:
+            close_all(tp2, False, "WIN_TP2", c.close_time)
             break
         if n + 1 >= cfg.risk.max_hold_bars_1h:
-            open_r = (c.c - entry) / risk
-            out["outcome"], out["exit_time"] = "TIMEOUT", c.close_time
-            out["realized_r"] = (partial * rr1 + (1 - partial) * max(0.0, open_r)) if hit1 else open_r
+            close_all(c.c, False, "TIMEOUT", c.close_time)
             break
-    if out["outcome"] != "OPEN":
-        out["position_status"] = Status.EXIT
+
     out["mfe"] = round((hi - entry) / risk, 3)
     out["mae"] = round((entry - lo) / risk, 3)
     out["max_r"] = out["mfe"]
-    if out["realized_r"] is not None:
-        out["realized_r"] = round(out["realized_r"], 3)
+    if out["outcome"] == "OPEN":
+        return out
+    out["position_status"] = Status.EXIT
+    gross = sum(f * (p - entry) / risk for f, p, _ in fills)
+    costs = cfg.costs
+    slip = slippage_pct(row, cfg)
+    cost_pct = 2 * costs.taker_fee_pct + slip  # fees on entry + exits, slippage on entry
+    cost_pct += sum(f * (slip + (costs.stop_slippage_pct if is_stop else 0.0)) for f, _, is_stop in fills)
+    if costs.include_funding and row.get("funding") is not None:
+        t_end = out["exit_time"]
+        full_h = ((t_tp1 or t_end) - row["entry_time"]) / HOUR_MS
+        part_h = (t_end - t_tp1) / HOUR_MS if t_tp1 else 0.0
+        cost_pct += row["funding"] * (full_h + (1 - partial) * part_h) / 8
+    cost_r = cost_pct / 100 * entry / risk
+    out["gross_r"] = round(gross, 3)
+    out["cost_r"] = round(cost_r, 3)
+    out["realized_r"] = round(gross - cost_r, 3)
     return out

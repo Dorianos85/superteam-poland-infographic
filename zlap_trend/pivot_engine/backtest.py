@@ -15,7 +15,7 @@ from .models import HOUR_MS, INTERVAL_MS
 
 
 def run_backtest(provider, cfg: Config, journal: Journal, symbols: list[str] | None = None,
-                 step_h: int = 4, warmup_days: int = 25, days: float | None = None,
+                 step_h: int = 1, warmup_days: int = 25, days: float | None = None,
                  progress: bool = True) -> dict:
     """`provider` must support set_cursor() and expose end_ms (Synthetic/Replay providers)."""
     orch = PivotOrchestrator(cfg, provider, journal)

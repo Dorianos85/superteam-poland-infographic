@@ -119,9 +119,11 @@ def cmd_backtest(args, cfg: Config) -> None:
     summary = run_backtest(provider, cfg, journal, args.symbols or None, step_h=args.step_h,
                            days=args.days if args.provider == "binance" else None)
     print(json.dumps(summary, indent=1))
-    rep = SelfImprovementAgent(cfg).run(journal.rows())
-    print(json.dumps(rep.analysis.get("taken", {}), indent=1))
-    print(f"journal: {args.journal} — run `optimize` for proposals")
+    from .portfolio import format_portfolio, portfolio_report
+    rows = journal.rows()
+    print("\n" + format_portfolio(portfolio_report(rows, cfg, taken_only=True)))
+    print("\n" + format_portfolio(portfolio_report(rows, cfg, taken_only=False)))
+    print(f"\njournal: {args.journal} — `report` for the portfolio report, `optimize` for proposals")
 
 
 def cmd_optimize(args, cfg: Config) -> None:
@@ -147,6 +149,13 @@ def cmd_optimize(args, cfg: Config) -> None:
         print(f"  EXPECTED IMPACT: {p['expected_impact']}")
         print(f"  RISK:            {p['risk']}")
     print(f"\nfull report: {args.out}  (proposals are NOT applied — edit your --config JSON to adopt one)")
+
+
+def cmd_report(args, cfg: Config) -> None:
+    from .portfolio import format_portfolio, portfolio_report
+    rows = Journal(args.journal, cfg).rows()
+    rep = portfolio_report(rows, cfg, taken_only=not args.all_setups)
+    print(json.dumps(rep, indent=1, default=str) if args.json else format_portfolio(rep))
 
 
 def cmd_coinfilter(args, cfg: Config) -> None:
@@ -200,10 +209,13 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("backtest")
     common(p, "synthetic-history")
     p.add_argument("--days", type=float, default=60)
-    p.add_argument("--step-h", type=int, default=4)
+    p.add_argument("--step-h", type=int, default=1, help="hours between scans (1 = like a live hourly scan)")
     p.add_argument("--top", type=int, default=30, help="Binance: N most liquid perps when --symbols is omitted")
     p = sub.add_parser("optimize")
     p.add_argument("--out", default="SYSTEM_OPTIMIZATION_PROPOSAL.json")
+    p = sub.add_parser("report", help="portfolio report: drawdown, Sharpe, profit factor, Monte Carlo")
+    p.add_argument("--all-setups", action="store_true", help="include filtered setups (hypothetical entries)")
+    p.add_argument("--json", action="store_true")
     p = sub.add_parser("coinfilter", help="walk-forward test of trading only previously profitable coins")
     p.add_argument("--folds", type=int, default=4)
     p.add_argument("--min-trades", type=int, default=1)
@@ -215,7 +227,7 @@ def main(argv: list[str] | None = None) -> None:
     args = ap.parse_args(argv)
     cfg = Config.load(args.config)
     {"scan": cmd_scan, "watch": cmd_watch, "detail": cmd_detail, "backtest": cmd_backtest,
-     "optimize": cmd_optimize, "journal": cmd_journal, "coinfilter": cmd_coinfilter}[args.cmd](args, cfg)
+     "optimize": cmd_optimize, "journal": cmd_journal, "coinfilter": cmd_coinfilter, "report": cmd_report}[args.cmd](args, cfg)
 
 
 if __name__ == "__main__":

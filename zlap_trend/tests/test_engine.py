@@ -144,19 +144,51 @@ class OrchestratorTests(unittest.TestCase):
 class JournalTests(unittest.TestCase):
     def test_simulate_win_and_loss(self):
         cfg = Config()
-        row = {"entry": 100.0, "sl": 98.0, "tp1": 104.0, "tp2": 108.0, "line_json": None}
+        row = {"entry": 100.0, "sl": 98.0, "tp1": 104.0, "tp2": 108.0, "line_json": None,
+               "entry_time": 0, "funding": 0.0, "quote_volume_24h": 1e9}
         win = simulate(row, candles_from([100, 101, 103, 104.5, 106, 109]), cfg)
         self.assertEqual(win["outcome"], "WIN_TP2")
-        self.assertAlmostEqual(win["realized_r"], 0.5 * 2 + 0.5 * 4, places=3)
+        self.assertAlmostEqual(win["gross_r"], 0.5 * 2 + 0.5 * 4, places=3)
+        # fees 2x0.05% + slippage 2x0.02% = 0.14% of price = 0.07R with a 2% stop
+        self.assertAlmostEqual(win["cost_r"], 0.07, places=3)
+        self.assertAlmostEqual(win["realized_r"], win["gross_r"] - win["cost_r"], places=3)
         loss = simulate(row, candles_from([100, 99, 97]), cfg)
         self.assertEqual(loss["outcome"], "LOSS")
-        self.assertEqual(loss["realized_r"], -1.0)
+        self.assertAlmostEqual(loss["gross_r"], -1.0, places=3)
+        self.assertLess(loss["realized_r"], -1.0)  # costs + stop slippage make a loss worse than -1R
+
+    def test_gap_through_stop_fills_at_open(self):
+        row = {"entry": 100.0, "sl": 98.0, "tp1": 104.0, "tp2": 108.0, "line_json": None,
+               "entry_time": 0, "funding": 0.0, "quote_volume_24h": 1e9}
+        gap = [Candle(0, 100, 100.5, 99.5, 100, 1, 0), Candle(HOUR_MS, 96, 96.5, 95, 95.5, 1, 0)]
+        res = simulate(row, gap, Config())
+        self.assertAlmostEqual(res["gross_r"], -2.0, places=3)  # filled at 96, not 98
+
+    def test_same_bar_tp1_and_breakeven_is_pessimistic(self):
+        row = {"entry": 100.0, "sl": 98.0, "tp1": 104.0, "tp2": 108.0, "line_json": None,
+               "entry_time": 0, "funding": 0.0, "quote_volume_24h": 1e9}
+        bar = [Candle(0, 100, 104.5, 99.0, 101, 1, 0)]  # touches TP1 and goes back below entry
+        res = simulate(row, bar, Config())
+        self.assertEqual(res["outcome"], "WIN_TP1")
+        self.assertAlmostEqual(res["gross_r"], 1.0, places=3)
+        opt = simulate(row, bar, Config().with_value("costs.same_bar", "optimistic"))
+        self.assertEqual(opt["outcome"], "OPEN")
+
+    def test_funding_cost(self):
+        row = {"entry": 100.0, "sl": 98.0, "tp1": 104.0, "tp2": 108.0, "line_json": None,
+               "entry_time": 0, "funding": 0.1, "quote_volume_24h": 1e9}
+        flat = [Candle(i * HOUR_MS, 100, 100.5, 99.5, 100, 1, 0) for i in range(8)] + \
+               [Candle(8 * HOUR_MS, 100, 100.5, 97, 97.5, 1, 0)]
+        res = simulate(row, flat, Config())
+        no_fund = simulate(dict(row, funding=0.0), flat, Config())
+        self.assertAlmostEqual(res["cost_r"] - no_fund["cost_r"], 0.1 * 9 / 8 / 100 * 100 / 2, places=3)
 
     def test_self_improvement_only_proposes(self):
         rows = []
         for i in range(60):
             deep = i % 2 == 0
-            rows.append({"taken": 1, "outcome": "LOSS" if deep else "WIN_TP2", "realized_r": -1.0 if deep else 2.0,
+            rows.append({"taken": 1, "entry_time": i, "symbol": "X",
+                         "outcome": "LOSS" if deep else "WIN_TP2", "realized_r": -1.0 if deep else 2.0,
                          "correction_depth": 70.0 if deep else 45.0, "pivot_score": 85, "rs_7d": 5, "rs_4h": 1,
                          "volume_ratio": 1.3, "oi_regime": "X", "funding_state": "NEUTRAL", "funding": 0.01,
                          "retest_status": "RETEST_CONFIRMED", "entry_mode": "B_STANDARD", "rr": 2.5,
@@ -168,6 +200,36 @@ class JournalTests(unittest.TestCase):
         self.assertIn("correction.max_depth_pct", params)
         self.assertTrue(all(p["status"] == "PENDING_HUMAN_REVIEW" for p in rep.proposals))
         self.assertEqual(cfg.correction.max_depth_pct, 78.6)  # config untouched
+
+    def test_self_improvement_rejects_in_sample_only_effect(self):
+        rows = []
+        for i in range(100):
+            deep = i % 2 == 0
+            if i < 70:  # train: deep corrections lose
+                r = -1.0 if deep else 2.0
+            else:       # test: the effect reverses
+                r = 2.0 if deep else -1.0
+            rows.append({"taken": 1, "entry_time": i, "symbol": "X", "outcome": "X", "realized_r": r,
+                         "correction_depth": 70.0 if deep else 45.0, "pivot_score": 85, "rs_7d": 5, "rs_4h": 1,
+                         "volume_ratio": 1.3, "oi_regime": "X", "funding_state": "NEUTRAL", "funding": 0.01,
+                         "retest_status": "RETEST_CONFIRMED", "entry_mode": "B_STANDARD", "rr": 2.5,
+                         "mfe": 1, "mae": 0.5, "false_breakout": 0, "components_json": None,
+                         "failed_json": "[]", "pivot_confirmations": 4})
+        rep = SelfImprovementAgent(Config()).run(rows)
+        self.assertNotIn("correction.max_depth_pct", [p["parameter"] for p in rep.proposals])
+        self.assertIn("correction.max_depth_pct",
+                      [p["parameter"] for p in rep.analysis["rejected_out_of_sample"]])
+
+    def test_portfolio_report(self):
+        from pivot_engine.portfolio import portfolio_report
+        rows = [{"taken": 1, "outcome": "X", "realized_r": r, "gross_r": r + 0.1, "cost_r": 0.1,
+                 "entry_time": i * 10 * HOUR_MS, "exit_time": i * 10 * HOUR_MS + 5 * HOUR_MS}
+                for i, r in enumerate([2.0, -1.0, -1.0, -1.0, 3.0, -1.0])]
+        rep = portfolio_report(rows, Config())
+        self.assertEqual(rep["max_drawdown_r"], 3.0)
+        self.assertEqual(rep["longest_losing_streak"], 3)
+        self.assertEqual(rep["profit_factor"], 1.25)
+        self.assertEqual(rep["max_concurrent_positions"], 1)
 
 
 if __name__ == "__main__":

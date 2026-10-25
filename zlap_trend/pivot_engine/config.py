@@ -109,6 +109,25 @@ class RiskCfg:
 
 
 @dataclass
+class CostsCfg:
+    """Trading costs applied by the journal's outcome simulation (all in % of price)."""
+    taker_fee_pct: float = 0.05  # per side (Binance USDⓈ-M taker, no BNB discount)
+    slippage_pct: float = 0.02  # per fill, for a coin with slippage_ref_volume of 24h volume
+    stop_slippage_pct: float = 0.05  # extra on stop-market exits
+    slippage_ref_volume: float = 100_000_000.0
+    max_slippage_mult: float = 4.0  # thin coins: slippage scales with sqrt(ref/vol), capped
+    include_funding: bool = True  # long pays positive funding every 8h
+    same_bar: str = "pessimistic"  # TP1 and BE touched in one bar -> assume BE hit after TP1
+
+
+@dataclass
+class PortfolioCfg:
+    risk_per_trade_pct: float = 0.5  # equity risked per trade (for the % equity curve)
+    monte_carlo_runs: int = 2000
+    bootstrap_runs: int = 2000
+
+
+@dataclass
 class ExtensionCfg:
     max_return_24h_pct: float = 30.0
     max_dist_atr_4h: float = 2.5
@@ -155,6 +174,7 @@ class SelfImprovementCfg:
     min_samples: int = 30
     min_bucket: int = 15
     min_expectancy_gain_r: float = 0.05
+    train_fraction: float = 0.7  # proposals are fitted on the first 70% (time) and tested on the rest
 
 
 @dataclass
@@ -175,6 +195,8 @@ class Config:
     critic: CriticCfg = field(default_factory=CriticCfg)
     validation: ValidationCfg = field(default_factory=ValidationCfg)
     self_improvement: SelfImprovementCfg = field(default_factory=SelfImprovementCfg)
+    costs: CostsCfg = field(default_factory=CostsCfg)
+    portfolio: PortfolioCfg = field(default_factory=PortfolioCfg)
     # Macro events: [{"time": "2026-10-10T12:30:00Z", "name": "US CPI"}]
     macro_events: list = field(default_factory=list)
     macro_window_h: int = 12

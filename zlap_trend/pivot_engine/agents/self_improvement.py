@@ -5,6 +5,11 @@ entries (OLD RULE / NEW RULE / BACKTEST RESULT / EXPECTED IMPACT / RISK).
 
 It NEVER changes the configuration itself: every proposal is stored with status
 PENDING_HUMAN_REVIEW. A human applies it by editing the JSON config.
+
+Out-of-sample discipline: setups are split in time. A rule or weight change is
+chosen on the TRAIN part (first `train_fraction`) and is proposed only if the
+gain also holds on the TEST part it never saw. Both results, with bootstrap
+confidence intervals, are reported.
 """
 from __future__ import annotations
 
@@ -13,6 +18,7 @@ import math
 from dataclasses import dataclass, field
 
 from ..config import Config
+from ..stats import bootstrap_ci, bootstrap_diff_ci
 
 
 def _stats(rows: list[dict]) -> dict:
@@ -32,6 +38,7 @@ def _stats(rows: list[dict]) -> dict:
         "total_r": round(sum(rs), 2),
         "avg_mfe_r": round(sum(r["mfe"] or 0 for r in rows) / n, 2),
         "avg_mae_r": round(sum(r["mae"] or 0 for r in rows) / n, 2),
+        "expectancy_ci95": bootstrap_ci(rs, 1000),
     }
 
 
@@ -103,15 +110,31 @@ class SelfImprovementAgent:
             "by_retest": _categories(closed, "retest_status"),
             "by_entry_mode": _categories(taken, "entry_mode"),
         }
+        closed_t = sorted(closed, key=lambda r: r["entry_time"])
+        cut = int(len(closed_t) * cfg.train_fraction)
+        train, test = closed_t[:cut], closed_t[cut:]
+        rep.sample.update({"train_setups": len(train), "test_setups": len(test),
+                           "train_taken": sum(r["taken"] for r in train),
+                           "test_taken": sum(r["taken"] for r in test)})
+        rejected = []
         for cand in self._candidates():
-            p = self._evaluate(cand, closed, taken)
-            if p:
+            p = self._evaluate(cand, train, test)
+            if p and p.get("status") == "PENDING_HUMAN_REVIEW":
                 rep.proposals.append(p)
-        w = self._weights_proposal(closed)
-        if w:
+            elif p:
+                rejected.append(p)
+        w = self._weights_proposal(train, test)
+        if w and w.get("status") == "PENDING_HUMAN_REVIEW":
             rep.proposals.append(w)
+        elif w:
+            rejected.append(w)
+        rep.analysis["rejected_out_of_sample"] = [
+            {"parameter": p["parameter"], "new_rule": p["new_rule"], "reason": p["reason"]} for p in rejected]
         if not rep.proposals:
-            rep.notes.append("no rule change beats the current configuration on this sample")
+            rep.notes.append("no rule change improves expectancy both in-sample (train) and out-of-sample (test)")
+        if sum(r["taken"] for r in test) < cfg.min_bucket:
+            rep.notes.append(f"test window has only {sum(r['taken'] for r in test)} LONG_READY trades — "
+                             "tightening rules cannot be confirmed out-of-sample yet")
         return rep
 
     # ------------------------------------------------------------------
@@ -152,46 +175,64 @@ class SelfImprovementAgent:
                       relax_ok=lambda r: (r["pivot_confirmations"] or 0) >= c.pivot.min_confirmations - 1),
         ]
 
-    def _evaluate(self, cand: Candidate, closed: list[dict], taken: list[dict]) -> dict | None:
-        cfg = self.cfg.self_improvement
-        before = _stats(taken)
+    @staticmethod
+    def _apply(cand: Candidate, rows: list[dict]) -> tuple[list[dict], list[dict]]:
+        """(rows the system takes today, rows it would take under the new rule)."""
+        taken = [r for r in rows if r["taken"]]
         if cand.keep is not None:
-            after_rows = [r for r in taken if cand.keep(r)]
-        else:
-            # Setups that were filtered out ONLY by the rule being relaxed.
-            allowed = {cand.relax_failed}
-            if cand.relax_failed == "RR>=2":
-                allowed |= {"CriticRejected=FALSE", "RR_TOO_LOW"}
-            extra = []
-            for r in closed:
-                failed = set(json.loads(r.get("failed_json") or "[]"))
-                if not r["taken"] and cand.relax_failed in failed and failed <= allowed and cand.relax_ok(r):
-                    extra.append(r)
-            after_rows = taken + extra
-        after = _stats(after_rows)
-        if after["n"] < cfg.min_bucket or before["n"] == 0 and after["n"] == 0:
+            return taken, [r for r in taken if cand.keep(r)]
+        # Relaxing: add setups that were filtered out ONLY by the rule being relaxed.
+        allowed = {cand.relax_failed}
+        if cand.relax_failed == "RR>=2":
+            allowed |= {"CriticRejected=FALSE", "RR_TOO_LOW"}
+        extra = []
+        for r in rows:
+            failed = set(json.loads(r.get("failed_json") or "[]"))
+            if not r["taken"] and cand.relax_failed in failed and failed <= allowed and cand.relax_ok(r):
+                extra.append(r)
+        return taken, taken + extra
+
+    def _evaluate(self, cand: Candidate, train: list[dict], test: list[dict]) -> dict | None:
+        cfg = self.cfg.self_improvement
+        tr_before, tr_after = self._apply(cand, train)
+        if len(tr_after) < cfg.min_bucket:
             return None
-        gain = (after["expectancy_r"] or 0) - (before["expectancy_r"] or 0)
-        if gain < cfg.min_expectancy_gain_r:
-            return None
-        trade_change = after["n"] - before["n"]
-        return {
+        tr_gain = _gain(tr_before, tr_after)
+        if tr_gain < cfg.min_expectancy_gain_r:
+            return None  # not even better in-sample
+        te_before, te_after = self._apply(cand, test)
+        te_gain = _gain(te_before, te_after)
+        diff_ci = bootstrap_diff_ci([r["realized_r"] for r in te_before], [r["realized_r"] for r in te_after], 1000)
+        prop = {
             "kind": "RULE_CHANGE",
             "parameter": cand.parameter,
             "old_rule": cand.old_rule,
             "new_rule": cand.new_rule,
             "config_patch": {cand.parameter: cand.new_value},
-            "backtest_result": {"before": before, "after": after},
-            "expected_impact": (f"expectancy {before['expectancy_r']}R -> {after['expectancy_r']}R "
-                                f"({gain:+.3f}R/trade), trades {before['n']} -> {after['n']} ({trade_change:+d}), "
-                                f"total {before['total_r']}R -> {after['total_r']}R"),
-            "risk": self._risk_text(after["n"], trade_change, cand.keep is None),
+            "backtest_result": {
+                "train": {"before": _stats(tr_before), "after": _stats(tr_after), "gain_r": round(tr_gain, 3)},
+                "test": {"before": _stats(te_before), "after": _stats(te_after), "gain_r": round(te_gain, 3),
+                         "gain_ci95": diff_ci},
+                # kept for the CLI summary: the out-of-sample numbers are the ones that count
+                "before": _stats(te_before), "after": _stats(te_after),
+            },
+            "expected_impact": (f"OUT-OF-SAMPLE: expectancy {_e(te_before)}R -> {_e(te_after)}R ({te_gain:+.3f}R/trade, "
+                                f"95% CI {diff_ci}), trades {len(te_before)} -> {len(te_after)}; "
+                                f"in-sample gain was {tr_gain:+.3f}R"),
+            "risk": self._risk_text(len(te_after), len(te_after) - len(te_before), cand.keep is None, diff_ci),
             "status": "PENDING_HUMAN_REVIEW",
         }
+        if len(te_after) < max(5, cfg.min_bucket // 3):
+            prop.update(status="REJECTED", reason=f"test window too small ({len(te_after)} trades)")
+        elif te_gain <= 0:
+            prop.update(status="REJECTED", reason=f"in-sample {tr_gain:+.3f}R but out-of-sample {te_gain:+.3f}R")
+        return prop
 
     @staticmethod
-    def _risk_text(n: int, trade_change: int, relaxing: bool) -> str:
-        parts = [f"in-sample result on {n} trades — overfitting risk; validate out-of-sample before adopting"]
+    def _risk_text(n: int, trade_change: int, relaxing: bool, diff_ci=None) -> str:
+        parts = [f"out-of-sample result on {n} trades; forward-test before adopting"]
+        if diff_ci is not None and diff_ci[0] <= 0:
+            parts.append("95% CI of the gain includes 0 — not statistically significant")
         if n < 50:
             parts.append("small sample (<50): high variance of the estimate")
         if relaxing:
@@ -200,48 +241,69 @@ class SelfImprovementAgent:
             parts.append(f"fewer signals ({trade_change:+d}); may miss strong trends")
         return "; ".join(parts)
 
-    def _weights_proposal(self, closed: list[dict]) -> dict | None:
+    def _weights_proposal(self, train: list[dict], test: list[dict]) -> dict | None:
         cfg = self.cfg.self_improvement
         w = self.cfg.scoring
         weights = {"relative_strength": w.w_rs, "trend_quality": w.w_trend, "impulse_quality": w.w_impulse,
                    "correction_quality": w.w_correction, "line_break": w.w_line_break, "volume": w.w_volume,
                    "oi_funding": w.w_derivatives, "retest": w.w_retest, "rr": w.w_rr}
-        rows = [r for r in closed if r.get("components_json")]
-        if len(rows) < cfg.min_samples:
+        tr = [r for r in train if r.get("components_json")]
+        te = [r for r in test if r.get("components_json")]
+        if len(tr) < cfg.min_samples:
             return None
-        comps = [json.loads(r["components_json"]) for r in rows]
-        rs = [r["realized_r"] for r in rows]
-        corr = {k: _pearson([c.get(k, 0) for c in comps], rs) for k in weights}
+        comps = [json.loads(r["components_json"]) for r in tr]
+        corr = {k: _pearson([c.get(k, 0) for c in comps], [r["realized_r"] for r in tr]) for k in weights}
         raw = {k: weights[k] * min(1.5, max(0.5, 1 + corr[k])) for k in weights}
         scale = 100 / sum(raw.values())
         new_w = {k: round(v * scale, 1) for k, v in raw.items()}
-
-        def rescore(c, ws):
-            return sum(c.get(k, 0) * (ws[k] / weights[k] if weights[k] else 0) for k in weights)
-
         thr = self.cfg.scoring.long_ready
-        old_sel = [r for r, c in zip(rows, comps) if rescore(c, weights) >= thr]
-        new_sel = [r for r, c in zip(rows, comps) if rescore(c, new_w) >= thr]
-        before, after = _stats(old_sel), _stats(new_sel)
-        if after["n"] < cfg.min_bucket:
+
+        def select(rows, ws):
+            out = []
+            for r in rows:
+                c = json.loads(r["components_json"])
+                if sum(c.get(k, 0) * (ws[k] / weights[k] if weights[k] else 0) for k in weights) >= thr:
+                    out.append(r)
+            return out
+
+        tr_gain = _gain(select(tr, weights), select(tr, new_w))
+        if len(select(tr, new_w)) < cfg.min_bucket or tr_gain < cfg.min_expectancy_gain_r:
             return None
-        gain = (after["expectancy_r"] or 0) - (before["expectancy_r"] or 0)
-        if gain < cfg.min_expectancy_gain_r:
-            return None
-        return {
+        te_old, te_new = select(te, weights), select(te, new_w)
+        te_gain = _gain(te_old, te_new)
+        diff_ci = bootstrap_diff_ci([r["realized_r"] for r in te_old], [r["realized_r"] for r in te_new], 1000)
+        prop = {
             "kind": "WEIGHTS_CHANGE",
             "parameter": "scoring.w_*",
             "old_rule": json.dumps(weights),
             "new_rule": json.dumps(new_w),
             "config_patch": {f"scoring.{_wkey(k)}": v for k, v in new_w.items()},
-            "component_correlation_with_R": {k: round(v, 3) for k, v in corr.items()},
-            "backtest_result": {"before": before, "after": after, "selection": f"PivotScore >= {thr}"},
-            "expected_impact": f"expectancy of score>={thr} setups {before['expectancy_r']}R -> "
-                               f"{after['expectancy_r']}R ({gain:+.3f}R), trades {before['n']} -> {after['n']}",
-            "risk": self._risk_text(after["n"], after["n"] - before["n"], False)
-                    + "; weights fitted on the same sample they are tested on",
+            "component_correlation_with_R_train": {k: round(v, 3) for k, v in corr.items()},
+            "backtest_result": {"selection": f"PivotScore >= {thr}",
+                                "train_gain_r": round(tr_gain, 3), "test_gain_r": round(te_gain, 3),
+                                "test_gain_ci95": diff_ci,
+                                "before": _stats(te_old), "after": _stats(te_new)},
+            "expected_impact": f"OUT-OF-SAMPLE expectancy of score>={thr} setups {_e(te_old)}R -> {_e(te_new)}R "
+                               f"({te_gain:+.3f}R, 95% CI {diff_ci}); in-sample gain {tr_gain:+.3f}R",
+            "risk": self._risk_text(len(te_new), len(te_new) - len(te_old), False, diff_ci)
+                    + "; weights fitted on the train window only",
             "status": "PENDING_HUMAN_REVIEW",
         }
+        if len(te_new) < max(5, cfg.min_bucket // 3):
+            prop.update(status="REJECTED", reason=f"test window too small ({len(te_new)} setups)")
+        elif te_gain <= 0:
+            prop.update(status="REJECTED", reason=f"in-sample {tr_gain:+.3f}R but out-of-sample {te_gain:+.3f}R")
+        return prop
+
+
+def _e(rows: list[dict]):
+    return round(sum(r["realized_r"] for r in rows) / len(rows), 3) if rows else None
+
+
+def _gain(before: list[dict], after: list[dict]) -> float:
+    if not before or not after:
+        return 0.0  # nothing to compare against
+    return _e(after) - _e(before)
 
 
 def _wkey(component: str) -> str:

@@ -34,7 +34,9 @@ python -m pivot_engine detail PYTHUSDT --provider synthetic
 # Walk-forward backtest → dziennik → propozycje optymalizacji
 python -m pivot_engine backtest --provider synthetic-history --n-symbols 40 --history-days 180
 python -m pivot_engine backtest --provider binance --top 30 --days 90   # lub --symbols PYTHUSDT JUPUSDT
-python -m pivot_engine optimize          # → SYSTEM_OPTIMIZATION_PROPOSAL.json
+python -m pivot_engine optimize          # → SYSTEM_OPTIMIZATION_PROPOSAL.json (train/test)
+python -m pivot_engine report            # drawdown, Sharpe, profit factor, Monte Carlo (--all-setups)
+python -m pivot_engine coinfilter --min-trades 10 --shrink 20   # walk-forward test whitelisty coinów
 python -m pivot_engine journal
 
 # Testy
@@ -98,7 +100,22 @@ konfiguracji — wdrożenie = człowiek dopisuje `config_patch` do pliku `--conf
 {"correction": {"max_depth_pct": 61.8}, "risk": {"min_rr": 2.5}}
 ```
 
+Walidacja out-of-sample: setupy są dzielone w czasie (`train_fraction` = 70%). Reguła/wagi
+są dobierane na części TRAIN i proponowane tylko, jeśli poprawa utrzymuje się na części
+TEST, której agent nie widział. Raport podaje oba wyniki i 95% CI (bootstrap) zysku;
+reguły, które wygrały tylko in-sample, trafiają do `rejected_out_of_sample`.
+
 Wszystkie progi i wagi: `pivot_engine/config.py`.
+
+### Koszty i raport portfela
+
+`realized_r` w dzienniku jest **netto**: prowizja taker 2×0,05%, poślizg skalowany
+płynnością (0,02% przy 100M USD wolumenu, rośnie jak √(100M/wolumen), max 4×), dodatkowy
+poślizg 0,05% na stopach, luka przez SL wypełniana po open, funding za czas trzymania,
+a świeca z TP1 i powrotem do BE liczona pesymistycznie. `gross_r` i `cost_r` są obok.
+Parametry: `costs.*` w configu. `report` liczy krzywą kapitału (przy `portfolio.risk_per_trade_pct`),
+max DD, Sharpe/Sortino, profit factor, serie strat, ekspozycję, nakładanie się pozycji,
+95% CI expectancy i Monte Carlo kolejności transakcji.
 
 ### Makro
 
@@ -111,6 +128,7 @@ Krytyk sprawdza nadchodzące wydarzenia z configu:
   skuteczności na realnym rynku. Rzetelną ocenę daje `backtest --provider binance`.
 * Binance udostępnia historię OI tylko z ~30 dni; w starszym replayu agent derywatów
   raportuje `UNKNOWN` (neutralny wynik).
-* Pozycje w dzienniku są papierowe (symulacja: SL przed TP na tej samej świecy, 50% na TP1,
-  SL→BE, reszta na TP2 lub timeout). Moduł nie składa zleceń.
+* Pozycje w dzienniku są papierowe (symulacja na świecach 1H: SL przed TP na tej samej świecy,
+  50% na TP1, SL→BE, reszta na TP2 lub timeout, koszty jak wyżej). Moduł nie składa zleceń.
+* Raport portfela traktuje każdy setup niezależnie (bez limitu jednoczesnych pozycji).
 * To narzędzie analityczne, nie porada inwestycyjna.
