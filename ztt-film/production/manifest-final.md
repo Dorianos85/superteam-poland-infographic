@@ -96,3 +96,92 @@ Usunięto z kopii 10 klipów PL z A1 (9 VO + FF Lena), od końca do początku. H
   - W folderze EN są dwa kafelki o identycznym tekście „[sultry, amused, slow] What's... your game?": pierwszy = Lena ALT (2,847 s), ostatni = Blondie ★ (2,769 s). Rozróżnienie po długości klipu po dodaniu (Lena dodana omyłkowo i cofnięta „Cofnij").
   - Treść napisu: w układzie mobilnym pole „Treść" otwiera przycisk „Generuj" w pasku klipu tekstowego (jego onClick to tylko `view.open({type:"edit"})`, nie generacja). Dla klipów wideo/audio tego nie sprawdzałem.
 - Karta agenta zamarzła raz (CDP timeout) w trakcie pracy; zamknięta i otwarta nowa, zapisy były na serwerze. Karta 974286823 z projektem PL (nie moja, zamrożona) została otwarta.
+
+---
+# SUBTITLES EN 16:9 — „ZTT — License to Profit — SUBTITLES EN"
+Data: 2026-11-10 · agent montażysta (napisy EN)
+- **URL kopii:** https://elevenlabs.io/app/studio/kSWZiRAgS9pjgiuwt2gy (ID `kSWZiRAgS9pjgiuwt2gy`)
+- Powstała przez: lista projektów Studio → „Opcje projektu" przy „ZTT — License to Profit — MASTER EN" → „Duplikuj projekt" → nazwa zmieniona w nagłówku edytora. Oryginału MASTER EN nie edytowano.
+
+## 1. Podpisy (11 klipów tekstowych)
+Styl wspólny: Barlow Condensed · Waga Pogrubienie · biały #FFFFFF · Rozmiar 100 % · Efekty: Cień tekstu WŁ. (#000 50 %, rozmycie 4, przesunięcie 2/2) + Kontur tekstu WŁ. (#000 100 %, szer. 2) · bez animacji · wyśrodkowane · wszystkie w 1 linii.
+Pozycja (ta sama dla wszystkich): ramka zaznaczenia y = **75,4–94,0 %** wysokości kadru (ramka ma własny margines; same litery ok. 81–88 %). Nic poniżej 94 %.
+| # | Tekst | Oś (ms) | Start VO | Ścieżka | Szer. liter (ok.) |
+|---|---|---|---|---|---|
+| 1 | There are places… nothing can reach. | 9 987–13 957 | 9 987 | V2 | 56 % |
+| 2 | …yet everything that matters reaches me. | 15 451–19 321 | 15 451 | V2 | 62 % |
+| 3 | The chart never runs from me. Ever. | 23 460–27 250 | 23 460 | V2 | 54 % |
+| 4a | I see the flow of information. And capital. | 29 019–32 309 | 29 019 | V2 | 61 % |
+| 4b | I see attacks before they come. | 32 316–35 206 | (VO_04 kończy się 35 210) | V3 | 47 % |
+| 5 | I'm armed… to the teeth. | 38 534–42 004 | 38 534 | V3 | 37 % |
+| 6 | What's your game? (**Kursywa**) | 43 999–46 769 | 43 999 | V3 | 28 % |
+| 7 | I don't play. I see. | 48 333–51 413 | 48 333 | V3 | 27 % |
+| 8 | Profits locked in? | 53 044–54 614 | 53 044 | V3 | 27 % |
+| 9 | They all… already know. | 62 560–65 720 | 62 560 | V3 | 37 % |
+| 10 | And you? Catch the trend — before it catches you. | 69 343–74 593 | 69 343 | V4 (nowa) | 71–73 % (ok. 14–86 % kadru) |
+- Starty = starty klipów VO co do 1 ms (linijka przyciąga kursor do krawędzi klipów). Pozycje VO w kopii zgodne z tabelą MASTER EN (odchyłka 0 ms).
+- Studio samo rozłożyło klipy na V2/V3 (wolne miejsca) + nowa V4 dla ostatniego; nie powstała jedna osobna ścieżka — bez wpływu na obraz.
+- Podpis 10 zachodzi czasowo na tytuły (69,34–70,04 s), ale nie przestrzennie: tytuł ramka y 35–52 %, „LICENSE TO PROFIT" ok. 66 %, podpis od 75 %. Sprawdzone na podglądzie w 1:09,7. Ostatni podpis kończy się 74 593 ms, karta końcowa zaczyna 75 008 ms.
+
+## 2. Tytuł „CATCH THE TREND TERMINAL" (66 014–70 014)
+- Ramka zaznaczenia: x **30,0–70,0 %**, y 35,4–51,8 %, **jedna linia**. Mieści się w 10–90 % → **rozmiaru NIE zmniejszano** (ani w kopii, ani w oryginale). Ostrzeżenie z sekcji MASTER EN pkt 2 nieaktualne: tytuł w MASTER EN jest w porządku.
+
+## 3. Weryfikacja po przeładowaniu
+- Kopia: **67 klipów** (18 wideo + 1 logo, 15 tekstów = 4 stare + 11 podpisów, 33 audio), koniec 78 508 ms.
+- Podgląd tym razem DZIAŁAŁ (okno widoczne): obejrzane kadry 0:24,7 (podpis 3 na jasnym tle — czytelny), 0:45 (kursywa), 1:09,7 (tytuł + podtytuł + podpis bez kolizji).
+
+## 4. Eksport
+- Eksportuj → Wideo · Wysoka jakość · Cała oś czasu (było już zaznaczone). Koszt niepokazany. NIE pobierano. Status — patrz niżej.
+- **Render zakończony po ok. 2–3 min** → ✓ „ZTT — License to Profit — SUBTITLES EN · MP4" w projekcie kopii → „Eksportuj" → zakładka „Historia" (ikona „Pobierz").
+- Oryginał MASTER EN (odczyt po eksporcie, bez klikania): tytuł bez zmian, **56 klipów** (4 teksty, 18 wideo, 1 logo, 33 audio), koniec 78 508 ms.
+
+## 5. Uwagi / mechanika
+- Nikt nie odsłuchał ani nie obejrzał gotowego MP4; podgląd w edytorze obejrzany tylko w 3 kadrach. Rozmiar 100 % (litery ok. 7 % wysokości kadru) — jeśli na telefonie za małe, podnieść do ~120 % (najdłuższy podpis 10 trzeba wtedy złamać na 2 linie).
+- W trakcie pracy rozszerzenie Chrome rozłączyło się na ok. 15 min (aktualizacja 1.0.105 → 1.0.106, restart przeglądarki); po powrocie nowa grupa kart. Stara karta agenta (kopia otwarta) mogła zostać w Chrome poza kontrolą sesji — jeśli jest, zamknąć ręcznie.
+- Wklejanie: Ctrl+C / Ctrl+V z klawiatury NIE działało; działa ⋮ → „Kopiuj", potem klik w linijkę i ⋮ → „Wklej" (wkleja w miejscu kursora ze stylem i pozycją; ląduje na ścieżce zaznaczonego klipu lub wyżej, gdy koliduje).
+- Nowy tekst: przycisk „Utwórz +" (nad biblioteką) → Elementy → „Tekst".
+- Ramka zaznaczenia ma stały margines ok. 5 px z każdej strony, więc przy małym podglądzie (oś rozwinięta) wygląda na większą; mierzyć przy zwiniętej osi. Przy zwiniętej osi kursor ustawia się kliknięciem w wąski pasek na samym dole (y ≈ 630).
+- Karta edytora w tle potrafi zamarzać (CDP timeout), gdy drugi agent ładuje Studio w tym samym Chrome — pomaga ponowna nawigacja.
+
+---
+# NAPISY PL 16:9 — „ZTT — Licencja na zysk — NAPISY PL"
+Data: 2026-11-10 · agent montażysta NAPISY PL
+- **URL kopii:** https://elevenlabs.io/app/studio/vh0tGkEI68hZtL4wBVhQ (ID `vh0tGkEI68hZtL4wBVhQ`), 16:9.
+- Powstała przez: lista projektów Studio → „Opcje projektu" przy „ZTT — Licencja na zysk — MASTER" → „Duplikuj projekt" → nazwa zmieniona w nagłówku edytora (klik w tytuł, Ctrl+A, wpisz, Enter). Oryginału nie edytowano.
+
+## Styl podpisów (wszystkie 11 identyczne; kopie pierwszego klipu)
+Barlow Condensed · Waga: Pogrubienie · kolor #FFFFFF · Rozmiar **69 %** · wyrównanie do środka · Efekty: Cień tekstu WŁ. (#000000 50 %, rozmycie 4, przesunięcie 2/2) + Kontur tekstu WŁ. (#000000 100 %, szer. 2) · bez animacji, bez tła. „Na co grasz?" dodatkowo Styl: **Kursywa**.
+Pozycja: wyśrodkowane w poziomie, ramka w pionie **78,7–92,6 %** wysokości kadru (wszystkie 11; nic poniżej 94 %). Wszystkie w 1 linii; najszersza ramka 43,4 % szerokości kadru.
+
+## Podpisy (oś w ms; odchyłka startu względem klipu VO)
+| # | Tekst | Oś (ms) | VO (ms) | Δ start | Ścieżka | Ramka x |
+|---|---|---|---|---|---|---|
+| 1 | Są miejsca… do których nie dociera nic… | 9987–14037 | 9987–14036 | 0 | V2 | 28,3–71,7 % |
+| 2 | …do mnie dociera wszystko, co ważne. | 15479–19189 | 15451–19160 | +28 | V2 | 29,5–70,5 % |
+| 3 | Wykres mi nie ucieka. Nigdy. | 23421–27211 | 23460–27248 | −39 | V2 | 34,4–65,6 % |
+| 4a | Widzę przepływy informacji. I kapitału. | 29013–32213 | 29019–35288 | −6 | V2 | 29,0–70,9 % |
+| 4b | Widzę ataki, zanim nadejdą. | 32244–35284 | (ta sama kwestia) | — | V2 | 34,9–65,1 % |
+| 5 | Jestem uzbrojony… po zęby. | 38529–42159 | 38534–42165 | −5 | V2 | 34,6–65,4 % |
+| 6 | Na co grasz? (kursywa) | 43993–46503 | 43999–46507 | −6 | V2 | 42,4–57,6 % |
+| 7 | Ja nie gram. Ja widzę. | 48327–51327 | 48333–51337 | −6 | V2 | 37,6–62,4 % |
+| 8 | Zrealizowane zyski? | 53048–54768 | 53044–54768 | +4 | V2 | 38,7–61,3 % |
+| 9 | Oni wszyscy… już wiedzą. | 62554–65634 | 62560–65642 | −6 | V3 | 36,0–64,0 % |
+| 10 | A Ty? Złap trend — zanim złapie Ciebie. | 69337–74667 | 69343–74672 | −6 | **V4 (nowa)** | 29,2–70,8 % |
+- Podział 4a/4b na 3,2 s od startu kwestii przyjęty z zadania (nie odsłuchano, gdzie pada pauza); 31 ms przerwy między 4a i 4b.
+- Tytuły 1:06–1:10 („ZŁAP TREND TERMINAL" ramka y 35,4–51,8 %, „LICENCJA NA ZYSK" y 60,6–72,0 %) nie nachodzą na podpis 10 (y 78,7–92,6 %; wspólny czas 69,34–70,04 s). Podpis 10 kończy się 74 667 ms, karta końcowa zaczyna się 74 996 ms. Tytułów i karty nie zmieniano.
+- Ramki mierzone przy zwiniętej osi czasu (podgląd 584 px szer., `.border-blue-500` względem canvasu). Podgląd w tej sesji DZIAŁAŁ (widoczny obraz i napisy): obejrzane kadry 0:12, 0:25, 0:45, 1:09, 1:10 — napisy czytelne także na jasnym tle (0:25, świt).
+
+## Weryfikacja po przeładowaniu
+- Kopia: **67 klipów** = 56 + 11 (15 tekstów, 18 wideo, 1 logo, 33 audio), koniec 78 508 ms; pozycje wideo i audio identyczne jak w MASTER.
+
+## Mechanika / pułapki tej sesji
+- Pierwszy podpis: kursor na linijce → „Utwórz +" → „Tekst" (klip 5 s, przyciągnął się do startu VO). Kolejne: ⋮ „Więcej działań" → „Kopiuj", potem kursor + ⋮ → **„Wklej"** (Ctrl+V z klawiatury NIE działało; ⋮ wymaga zaznaczonego klipu, klik w linijkę nie zdejmuje zaznaczenia). Kursor: klik w linijkę (ok. 94 ms/px przy domyślnym zoomie) + strzałki ←/→ (1 klatka = 33 ms).
+- Kliknięcie w linijkę nie działa, gdy otwarty jest popover z listą (np. „Styl") ani w miejscu etykiet znacznika zakresu „Od/Do" — wtedy klik w pustą ścieżkę albo strzałki.
+- WPADKA: raz tekst poszedł poza pole (nic nie było zaznaczone) → odpaliły się skróty edytora: odtwarzanie, znacznik zakresu „Od 0:54 / Do 0:54" na linijce (został; nie wpływa na oś, ale ustawia domyślny zakres eksportu na „od–do"), wyłączyła się „Magnetyczna oś czasu" (włączona z powrotem). Klipów to nie zmieniło (porównanie z listą sprzed: wideo/audio bez zmian). Zbędny wklejony klip usunięty.
+- Chrome dwa razy się rozłączył/zrestartował; po restarcie okno bywa zminimalizowane (`innerWidth = 0`) — wtedy tylko JS (syntetyczne zdarzenia), zrzuty nie działają.
+
+## Eksport NAPISY PL
+- Eksportuj → Typ mediów: Wideo · Jakość: „Wysoka jakość" (najwyższa) · Zakres: **Cała oś czasu** (domyślnie wskoczyło „Zakres od–do" 00:54:02–00:54:03 = 0 s przez znacznik na linijce; przełączone ręcznie i potwierdzone odczytem `aria-checked`). Koszt nie był pokazany.
+- Render ok. 3–4 min (pasek stał na 65 %, potem „Finishing…") → status **MP4**. Leży: projekt NAPISY PL → „Eksportuj" → zakładka „Historia" → wpis „ZTT — Licencja na zysk — NAPISY PL · MP4" z przyciskiem „Pobierz". NIE pobierano.
+- Oryginał po eksporcie (odczyt bez klikania, tylko przewinięcie osi): tytuł „ZTT — Licencja na zysk — MASTER", **56 klipów** (18 wideo, 1 logo, 4 teksty, 33 audio), koniec 78 508 ms, 4 teksty bez zmian.
+- DO SPRAWDZENIA PRZEZ CZŁOWIEKA: eksportu nikt nie obejrzał (podgląd w edytorze widziany tylko w 5 kadrach); rozmiar 69 % (ok. 54 px przy 1080p) — jeśli za mały, podnieść Rozmiar we wszystkich 11 klipach; punkt podziału 4a/4b względem pauzy lektora.
