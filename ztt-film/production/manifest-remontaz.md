@@ -168,3 +168,80 @@ Stan przed (PL): 32 klipy (8 wideo V1, 7 tekstów, 1 logo, 16 audio) — dokład
 ## Do sprawdzenia przez człowieka
 - Zgranie SFX na eksporcie (plusk 0:09.93, żetony 0:17.3, alert 0:01.97) — w SFX plusk/żetony zdarzenie zakładane na początku pliku (jak w oryginalnej układance).
 - 10B: Zanikanie 0.8s (0:27.8–0:28.6) nachodzi na końcówkę gestu z zegarkiem; podgląd edytora nie pokazuje animacji wyjścia.
+
+---
+# REMONTAŻ 2 — PL (logo DORIANOS na czapce + nowe 6B) — 12 lis, agent montażysta 16:9 PL
+Projekty: MASTER PL https://elevenlabs.io/app/studio/DjVSb4OYp1RTmVVTZMBL · NAPISY PL https://elevenlabs.io/app/studio/vh0tGkEI68hZtL4wBVhQ
+Źródła: Zasoby → „ZTT — prawdziwy Dorian" (Biblioteka → Przestrzeń robocza; LwtBilo… jest głęboko na liście — przewinąć listę ok. 3800–4000 px).
+Wszystkie nowe klipy Kling w osi mają 8,042 s (tak jak stare); 6B Seedance 8,042 s.
+
+## Tabela (identyczna w MASTER i NAPISY PL — pozycje i wycinki co do ms)
+| Slot | Stary klip | NOWY ★ | Źródło in–out (s) | Oś (ms) | Uwagi |
+|---|---|---|---|---|---|
+| 1A | nloIWPF7… | WmWWAOwBdVhlVFvQVvQ1 | 1,933–7,993 | 0–6060 | dodany w 0, podział 1933, przesunięty na 0, R przyklejony do 6060 |
+| 3A | oYQuJo03… | AtDg8fuZ6jbZuzTR4OOp | 4,100–8,005 | 14087–17992 | kursor 9987 → Dodaj → podział 14087, R (37 ms) uchwytem z przyklejeniem |
+| 4A | rx3M13Wj… | 0Pian0h5q5o0k0TUNdNK | 2,020–8,038 | 22019–28037 | kursor 19999; R (4 ms) uchwytem |
+| **6B** | stary Veo (01a1c227-efa8…, 39987–43024) | **tSzbA0iOTusJSSfHPmzQ** | **2,500–5,537** | **39987–43024** | kursor 37487 → podział 39987 i 43024. Slot ma 3037 ms (nie 3000), więc wycinek 2,500–5,537. Kontrola podglądu: 0:40.0 (src 3,5) linia HUD już na szybie; **0:41.0 (src 3,51) / alert 41078 (src 3,59): zielona rosnąca linia HUD z kropką na przedniej szybie + twarz w lusterku** ✔ — wycinka nie przesuwano |
+| 7A | JGbdj8Zw… | dIG6ClmrEWvrw1csGOWN | 1,500–5,989 | 43024–47513 | kursor 41524 |
+| 8A | 40QM7NMb… | EGuKAVaA9TePboQC20he | 4,500–7,999 | 52002–55501 | kursor 47502; R (43 ms) uchwytem |
+| 8B | 0TxKfcY6… | DH48L2iqs9XjPeVa23JC | 1,700–5,209 | 55501–59010 | kursor 53801 |
+| 10B | GSu0wP38… | LwtBiloVVfJQpqG8INZs | 0,500–6,989 | 68507–74996 | kursor 68007; Animacja → Animuj wyjście: Zanikanie, Czas trwania 0.8s (prawdziwy klik w suwak x≈978) |
+Wszystkie nowe klipy: Audio → Wycisz = WŁ.; ⋮ „Przesuń na spód" → V1. Bez zmian: 2B, 3B (a/b), 7B i reszta.
+
+## MASTER PL
+- Stan przed: 57 klipów (19 wideo + 1 logo na V1, 4 teksty, 33 audio); ścieżki V3/V2/V1/A1–A4. Sygnatura (id, start, koniec, ścieżka) wszystkich klipów zapisana przed zmianą.
+- Po pracy i po przeładowaniu: **57 klipów**; V1 = 0–6060 · 6060–10060 · 10060–14087 · 14087–17992 · 17992–19992 · 19992–22019 · 22019–28037 · 28037–32065 · 32065–36026 · 36026–39987 · 39987–43024 · 43024–47513 · 47513–52002 · 52002–55501 · 55501–59010 · 59010–62509 · 62509–66005 · 66005–68507 · 68507–74996 · logo 74996–78506 (układ identyczny jak przed). Wszystkie 38 klipów nie-wideo — start/koniec/ścieżka identyczne (porównanie automatyczne: 0 różnic). Wyciszenie 8 nowych klipów i Zanikanie 0.8s na 10B potwierdzone po przeładowaniu. Przełączniki „Magnetyczna oś czasu"/„Połączone klipy" przywrócone na WŁ.
+- Podgląd: 0:41 (6B — lusterko z twarzą + zielona linia HUD z kropką) ✔ · 0:45 (7A — naszywka DORIANOS na czapce, kobieta szepcze) ✔ · 1:12 (10B — frontalny portret, logo na czapce) ✔ · dodatkowo 0:05 (1A), 0:24.5 (4A), 0:54 (8A, czapka od tyłu gładka), 0:57.6 (8B, zegarek) ✔.
+- **Eksport MASTER zakończony** (~2 min): Wideo · Wysoka jakość · Cała oś czasu → najnowszy wpis „ZTT — Licencja na zysk — MASTER · MP4" (Eksportuj → Historia, 12 lis). NIE pobierano.
+
+## NAPISY PL
+- Stan przed: 68 klipów (19 wideo + 1 logo, 15 tekstów, 33 audio), 8 ścieżek; sygnatura zapisana.
+- Po pracy i po przeładowaniu: **68 klipów**; V1 identyczne jak w MASTER (lista wyżej). 49 klipów nie-wideo — pozycje i ścieżki identyczne (0 różnic). Wyciszenie 8 nowych klipów i Zanikanie 0.8s na 10B potwierdzone po przeładowaniu. Przełączniki WŁ.
+- Podgląd: 0:41 (6B lusterko + HUD, podpis „Jestem zabezpieczony… po zęby."), 0:45 (7A, logo na czapce, „Na co grasz?"), 1:12 (10B, logo, podpis) ✔.
+- **Eksport NAPISY PL zakończony** (~2–3 min): Wideo · Wysoka jakość · Cała oś czasu → najnowszy wpis „ZTT — Licencja na zysk — NAPISY PL · MP4” (Eksportuj → Historia, 12 lis, nad wpisami sprzed 9 godzin i przedwczoraj). NIE pobierano. Karty agenta zamknięte; tymczasowe klucze localStorage `ztt_*` usunięte.
+
+## Mechanika — co zadziałało (wzorzec dla EN)
+- Kursor co do ms: syntetyczny pointerdown/mousedown/up/click na klipie muzyki A3 w x = x0 + T·(szer./78500). Cięcie: syntetyczny klik 6 px od góry klipu w x(T) (zaznacza + ustawia kursor) → JS-klik „Podzielony" (pasek pod podglądem). Usuwanie: zaznacz → JS-klik „Usuń".
+- „Dodaj do osi czasu" w kafelku: PRAWDZIWY hover + PRAWDZIWY klik; kafelek trzeba przewinąć skryptem tak, by jego góra była przy górnej krawędzi listy (w oknie 639 px lista ma ~56 px). Panel Biblioteki znika po zaznaczeniu klipu — ponownie prawdziwy klik w „Biblioteka".
+- Końcówki < 50 ms: uchwyt `cursor: ew-resize` przy prawej krawędzi + syntetyczny drag z rozbiegiem 25 px → przyklejenie do krawędzi sąsiada na V1 (co do ms). Przesunięcie 1A na 0: syntetyczny drag klipu (rozbieg 10 px) → przykleja się do 0.
+- ⋮ „Więcej działań" otwiera tylko PRAWDZIWY klik; „Przesuń na spód" klikany JS-em.
+- Skrypty powyżej ~15 s w NAPISY powodowały timeouty / zamrożenie renderera karty — dzielić na krótsze wywołania. Karta potrafi zmienić ID / zamarznąć (zwłaszcza po nawigacji i w trakcie renderu) → zamknąć, otworzyć projekt w nowej karcie (zawsze jedna karta na projekt).
+
+---
+# REMONTAŻ 2 — EN + SHORTY (logo DORIANOS na czapce + nowe 6B) — 12 lis, agent montażysta EN/9:16
+Projekty: MASTER EN https://elevenlabs.io/app/studio/piAXMakxMAbxvB9xyPCx · SUBTITLES EN https://elevenlabs.io/app/studio/kSWZiRAgS9pjgiuwt2gy · SHORT PL https://elevenlabs.io/app/studio/XduwSmt6zo2EmQkCTTeJ · SHORT EN https://elevenlabs.io/app/studio/hRMymJzfGChQAQjI3FJl
+Źródła: Zasoby → „ZTT — prawdziwy Dorian” (31 pozycji). Wszystkie nowe klipy: Audio → Wycisz = WŁ., ⋮ „Przesuń na spód” → V1, bez odbicia.
+
+## 16:9 — MASTER EN i SUBTITLES EN (tabela identyczna w obu, co do ms)
+| Slot | Stary | NOWY ★ | Źródło in–out (s) | Oś (ms) | Uwagi |
+|---|---|---|---|---|---|
+| 1A | nloIWPF7… | WmWWAOwBdVhlVFvQVvQ1 | 1,933–7,993 | 0–6060 | dodany w 0, podział 1933, przesunięty na 0, R dociągnięty do 6060 |
+| 3A | oYQuJo03… | AtDg8fuZ6jbZuzTR4OOp | 4,100–8,005 | 14087–17992 | kursor 9987 |
+| 4A | rx3M13Wj… | 0Pian0h5q5o0k0TUNdNK | 2,020–8,038 | 22019–28037 | kursor 19999 |
+| 6B | stary Veo (MASTER EN S276yWdb…, SUBT EN RA8zb3OM…; oba in 0,462) | tSzbA0iOTusJSSfHPmzQ | 2,500–5,537 | 39987–43024 | jak PL |
+| 7A | JGbdj8Zw… | dIG6ClmrEWvrw1csGOWN | 1,500–5,989 | 43024–47513 | kursor 41524 (stary EN miał in 1,501) |
+| 8A | 40QM7NMb… | EGuKAVaA9TePboQC20he | 4,500–7,999 | 52002–55501 | kursor 47502 |
+| 8B | 0TxKfcY6… | DH48L2iqs9XjPeVa23JC | 1,700–5,209 | 55501–59010 | kursor 53801 |
+| 10B | GSu0wP38… | LwtBiloVVfJQpqG8INZs | 0,500–6,989 | 68507–74996 | Animuj wyjście: Zanikanie, 0.8s |
+- MASTER EN po przeładowaniu: **57 klipów**; V1 = 0–6060 · 6060–10060 · 10060–14087 · 14087–17992 · 17992–19992 · 19992–22019 · 22019–28037 · 28037–32065 · 32065–36026 · 36026–39987 · 39987–43024 · 43024–47513 · 47513–52002 · 52002–55501 · 55501–59010 · 59010–62509 · 62509–66005 · 66005–68507 · 68507–74996 · logo 74996–78506. Wszystkie klipy poza 8 podmienionymi — start/koniec/ścieżka/in identyczne (porównanie automatyczne: 0 przesunięć). Wyciszenie 8 nowych + Zanikanie 800 ms na 10B potwierdzone po przeładowaniu. Przełączniki WŁ.
+- SUBTITLES EN po przeładowaniu: **68 klipów**; V1 identyczne jak wyżej; 0 przesunięć pozostałych klipów; wyciszenie + Zanikanie 800 ms potwierdzone. Przełączniki WŁ.
+- Podgląd: 0:41 (6B — wnętrze auta, HUD na szybie; w SUBT podpis „I'm armed… to the teeth.”) · 1:12 (10B — frontalny portret w czapce; w SUBT podpis EN) ✔.
+- **Eksport MASTER EN zakończony**: Wideo · Wysoka jakość · Cała oś czasu → Eksportuj → Historia: najnowszy wpis „ZTT — License to Profit — MASTER EN · MP4” (12 lis). NIE pobierano.
+- **Eksport SUBTITLES EN zakończony** (~3 min): najnowszy wpis „ZTT — License to Profit — SUBTITLES EN · MP4” (12 lis). NIE pobierano.
+
+## 9:16 — SHORT PL i SHORT EN (identycznie w obu)
+| Slot | Stary | NOWY ★ | Źródło in–out (s) | Oś (ms) | Uwagi |
+|---|---|---|---|---|---|
+| 1A | eS3t2ntSFOn1u39H4skX | CjJB9hYCJSzsUzVkY3lG | 5,000–8,000 | 0–3000 | dodany w 0, podział 5000, przesunięty na 0, R dociągnięty do 3000 |
+| 7A | mJxdfuUJ3GdkyCv9gc1e | 819V9NQJfPnNqHRcusmb | 3,500–7,197 | 11305–15002 | kursor 7805 |
+| 10B | vHXkX7i3HarOZnQY5Tk0 | 38qlyAIYF6rIUOV08pOX | 0,478–7,104 | 21990–28616 | Animuj wyjście: Zanikanie, 0.8s |
+- Oba shorty po przeładowaniu: **32 klipy**; V1 = 0–3000 · 3000–5196 · 5196–6996 · 6996–11305 · 11305–15002 · 15002–19109 · 19109–21990 · 21990–28616 (+ karta końcowa 28616–31996 bez zmian); 0 przesunięć innych klipów (audio, teksty, logo — w tym 3 przesunięte wcześniej SFX/alert zostają na swoich pozycjach). Wyciszenie + Zanikanie 800 ms potwierdzone. Przełączniki WŁ.
+- Podgląd 0:13 (7A — Dorian z kobietą) / 0:25 (10B — portret) ✔ (miniatury małe, częściowo zasłonięte toastem eksportu).
+- **Eksport SHORT PL zakończony** (~2 min): „ZTT — SHORT 9×16 — PL · MP4” (Historia, 12 lis). **Eksport SHORT EN zakończony** (~1,5 min): „ZTT — SHORT 9×16 — EN · MP4” (Historia, 12 lis). NIE pobierano.
+
+## Mechanika (różnice / ulepszenia vs REMONTAŻ 2 — PL)
+- Odczyt klipu z Reacta: element `[data-agent-clip-id]` → fiber w górę do `memoizedProps.clip.data` (pola: `template_node_pinned_version.id` = ID generacji, `start_time_ms/end_time_ms` = wycinek, `track_id`, `muted`, `animation`). Pozwala zweryfikować ID źródła, in/out i ścieżkę każdego klipu bez zrzutów.
+- Dociąganie krawędzi: z „Przyciąganiem” prawa krawędź 1A przykleiła się do końca alertu (5692) zamiast do 6060 → przycinanie z WYŁ. przyciąganiem i iteracją (drag gubi ~280 ms na rozbiegu; druga próba z korektą trafia co do ms), potem przyciąganie z powrotem WŁ.
+- W shortach (okno 639 px) lista Biblioteki ma ~28 px wysokości: kafelek przewinąć tak, by jego góra była 10 px NAD górą listy; „+” wtedy ok. (355, 228).
+- Pierwszy skrypt po prawdziwym kliknięciu „Biblioteka” zawsze widzi pustą listę — drugie wywołanie działa.
+- Środowisko: zawieszenia renderera kart w tle (MASTER EN raz, SUBTITLES EN raz po przeładowaniu) — prace nie ucierpiały (stan był już zapisany), dokończone w nowej karcie. Po zamknięciu kart grupa Claude znikała; w Chrome mogły zostać POZA grupą 2–3 osierocone karty (MASTER EN / SUBTITLES EN, ewentualnie pusta) — do ręcznego zamknięcia. Klucze localStorage `ztt_*` usunięte.
